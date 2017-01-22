@@ -2,7 +2,7 @@ nanoManager
 
 1. What's it for?
 	
-	- For now it will just dowsnload and install two updates (including SP) for your MS 2016 Nano server.
+	- For now it will just download and install two updates (including SP) for your MS 2016 Nano server.
 
 2. Additional features planned?
 
