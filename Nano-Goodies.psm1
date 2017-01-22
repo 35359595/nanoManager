@@ -1,29 +1,29 @@
 #################################################
 #												#
 #.NAME											#
-#	Microsoft Windows Server Nano Manager		#
+#	Microsoft Windows Server Nano Manager module#
 #												#
 #.AUTHOR										#
 #	Ivan Temchenko								#
 #												#
 #.VERSION										#
-#	1.0											#
+#	1.1											#
 #												#
 #################################################
 
-function Show-Menu () {
+function Show-Menu{
 	$selection = 0
-	Clear-Host
-	if($selection -eq 'x'){Write-Host "yep"}
 	Write-Host "Select action:
-	1 - install server updates
-	2 - install PS6 SSH remoting
+	1 - install server updates on this running server (recommended)
+	2 - install updates from Internet listed in script
+	3 - list installed updates
+	4 - install PS6 SSH remoting
 	x - exit script"
 	$selection = Read-Host "Input option"
 	return $selection
 }
 
-function Install-PS6(){
+function Install-PS6{
 	Write-Host "This function will install PowerShell version 6-alpha-14"
 	Write-Host "Downloading..."
 	Invoke-WebRequest 'https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.14/PowerShell_6.0.0.14-alpha.14-win10-x64.msi' | Out-File './ps6.msi'
@@ -39,10 +39,29 @@ function Install-PS6(){
 		Start-Sleep -Seconds 10
 		exit
 	}}
-	
+
 }
 
-function Install-Updates(){
+function Install-UpdatesRunning{
+	Write-Host "Scanning for available updates..."
+	$ci = New-CimInstance -Namespace root/Microsoft/Windows/WindowsUpdate -ClassName MSFT_WUOperationsSession
+	$result = $ci | Invoke-CimMethod -MethodName ScanForUpdates -Arguments @{SearchCriteria="IsInstalled=0";OnlineScan=$true}
+	if($result.Updates){
+		Invoke-CimMethod -InputObject $ci -MethodName ApplyApplicableUpdates
+		Restart-Computer; exit
+	}else{
+		Write-Host "No updates found."
+	}
+}
+
+function Show-InstalledUpdates{
+	Write-Host "Scanning installed updates..."
+	$ci = New-CimInstance -Namespace root/Microsoft/Windows/WindowsUpdate -ClassName MSFT_WUOperationsSession
+	$result = $ci | Invoke-CimMethod -MethodName ScanForUpdates -Arguments @{SearchCriteria="IsInstalled=1";OnlineScan=$true}
+	$result.Updates
+}
+
+function Install-Updates{
 	$updatesList = @{"kb3176936"="http://download.windowsupdate.com/c/msdownload/update/software/crup/2016/09/windows10.0-kb3176936-x64_5cff7cd74d68a8c7f07711b800008888b0fa8e81.msu";
 	"kb3192366"="http://download.windowsupdate.com/d/msdownload/update/software/crup/2016/09/windows10.0-kb3192366-x64_af96b0015c04f5dcb186b879f07a31c32cf2e494.msu"}
 $cabLocation = "./KB/cab"
